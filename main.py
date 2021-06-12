@@ -6,6 +6,7 @@ stemmer = LancasterStemmer()
 
 import numpy as np
 import tflearn
+from tensorflow.python.framework import ops
 import tensorflow
 import random
 import json
@@ -26,7 +27,7 @@ for intent in data['intents']:
         # saperates the word from string
         wrds = nltk.word_tokenize(pattern)
         words.extend(wrds)
-        doc_x.append(pattern)
+        doc_x.append(wrds)
         doc_y.append(intent['tag'])
 
         if intent['tag'] not in labels:
@@ -64,3 +65,13 @@ for x , doc in enumerate(doc_x):
 
 training = np.array(training)
 output = np.array(output)
+
+ops.reset_default_graph()
+
+net = tflearn.input_data(shape=[None, len(training[0])])
+net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, 8)
+net = tflearn.fully_connected(net, len(output[0]), activation='softmax')
+net = tflearn.regression(net)
+
+model = tflearn.DNN(net)
