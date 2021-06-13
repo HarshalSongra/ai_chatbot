@@ -1,5 +1,5 @@
 import nltk
-nltk.download('punkt')
+# nltk.download('punkt')
 from nltk.stem.lancaster import LancasterStemmer
 
 stemmer = LancasterStemmer()
@@ -7,8 +7,6 @@ stemmer = LancasterStemmer()
 import numpy as np
 import tflearn
 from tensorflow.python.framework import ops
-import tensorflow
-import random
 import json
 import pickle
 
@@ -99,3 +97,29 @@ except:
     model.save('model.tflearn')
 
 
+def bag_of_words(s, words):
+    bag = [0 for _ in range(len(words))]
+
+    s_words = nltk.word_tokenize(s)
+    s_words = [stemmer.stem(word.lower()) for word in s_words]
+
+    for se in s_words:
+        for i, w in enumerate(words):
+            if w == se:
+                bag[i] = 1
+
+
+    return np.array(bag)
+
+def chat():
+    print("Start talking with the bot! (type quit to stop)")
+    while True:
+        inp = input("You: ")
+        if inp.lower() == "quit":
+            break
+            
+        results = model.predict([bag_of_words(inp, words)])
+        print(results)
+
+
+chat()
