@@ -1,15 +1,14 @@
 import nltk
-# nltk.download('punkt')
 from nltk.stem.lancaster import LancasterStemmer
-
-stemmer = LancasterStemmer()
-
 import numpy as np
 import tflearn
-from tensorflow.python.framework import ops
+import tensorflow
+import random
 import json
 import pickle
+from tensorflow.python.framework import ops
 
+stemmer = LancasterStemmer()
 with open('intents.json') as file:
     data =  json.load(file)
 
@@ -35,12 +34,12 @@ except:
             doc_x.append(wrds)
             doc_y.append(intent['tag'])
 
-            if intent['tag'] not in labels:
+        if intent['tag'] not in labels:
                 labels.append(intent['tag'])
 
 
     # arranging data
-    words = [stemmer.stem(w.lower()) for w in words]
+    words = [stemmer.stem(w.lower()) for w in words if w != "?"]
     words = sorted(list(set(words)))
 
     labels = sorted(labels)
@@ -64,8 +63,8 @@ except:
         output_row = out_empty[:]
         output_row[labels.index(doc_y[x])] = 1
         
-    training.append(bag)
-    output.append(output_row)  
+        training.append(bag)
+        output.append(output_row)  
     
     with open("data.pickle", "wb") as f:
         pickle.dump((words, labels, training, output), f)
@@ -91,11 +90,10 @@ model = tflearn.DNN(net)
 
 try:
     model.load("model.tflearn")
-
 except:
     model.fit(training, output, n_epoch = 1000, batch_size=8, show_metric=True)
     model.save('model.tflearn')
-
+    
 
 def bag_of_words(s, words):
     bag = [0 for _ in range(len(words))]
@@ -111,15 +109,24 @@ def bag_of_words(s, words):
 
     return np.array(bag)
 
+
 def chat():
     print("Start talking with the bot! (type quit to stop)")
     while True:
         inp = input("You: ")
         if inp.lower() == "quit":
+            print("Thanks for your good time")
             break
             
         results = model.predict([bag_of_words(inp, words)])
-        print(results)
-
+        results_index = np.argmax(results)
+        tag = labels[results_index]
+        
+        for tg in data["intents"]:
+            if tg['tag'] == tag:
+                responses = tg['responses']
+            
+        print(random.choice(responses))
+    
 
 chat()
